@@ -22,6 +22,9 @@ class Event(object):
         elif event_type == 'assigned':
             assignee = json_event['assignee']['login']
             return AssignedEvent(event_type, timestamp, assignee, json_event)
+        elif event_type == 'commented':
+            comment = json_event['body']
+            return AssignedEvent(event_type, timestamp, comment, json_event)
         else:
             return Event(event_type, timestamp, json_event)
 
@@ -29,7 +32,10 @@ class Event(object):
         return '%s: %s' % (self.timestamp, self.event_type)
 
 
+#TODO: All of these chaps can be handled with the same class (for now at least).
+
 class AssignedEvent(Event):
+    """Specific event class for Assigned event."""
 
     def __init__(self, event_type, timestamp, assignee, json_event=None):
         super(AssignedEvent, self).__init__(event_type, timestamp, json_event)
@@ -39,6 +45,7 @@ class AssignedEvent(Event):
         return '%s: %s->%s' % (self.timestamp, self.event_type, self.assignee)
 
 class LabeledEvent(Event):
+    """Specific event class for Labeled event."""
 
     def __init__(self, event_type, timestamp, label, json_event=None):
         super(LabeledEvent, self).__init__(event_type, timestamp, json_event)
@@ -46,3 +53,13 @@ class LabeledEvent(Event):
 
     def __str__(self):
         return '%s: %s->%s' % (self.timestamp, self.event_type, self.label)
+
+class CommentedEvent(Event):
+    """Specific event class for Labeled event."""
+
+    def __init__(self, event_type, timestamp, comment, json_event=None):
+        super(CommentedEvent, self).__init__(event_type, timestamp, json_event)
+        self.comment = comment
+
+    def __str__(self):
+        return '%s: %s->%s' % (self.timestamp, self.event_type, self.comment)
