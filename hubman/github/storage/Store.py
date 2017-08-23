@@ -1,5 +1,5 @@
 """Abstract storage impl."""
-from spudbin.storage import Database
+from hubman.github.storage import Database
 
 class Store(object):
     """Abstract db storage class, implementing some common stuff."""

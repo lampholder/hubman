@@ -19,4 +19,11 @@ class IssueFetcher(GithubClient):
 
         github_response = requests.get(search_url, headers=headers, params=params, auth=auth)
 
-        return cls.drain(github_response)
+        def issue_fetcher(response_json):
+            """Custom fetching strategy - yeild everything in the 'items'
+            array, one by one."""
+            for json_entity in response_json['items']:
+                yield json_entity
+
+        return cls.drain(github_response, headers=headers, auth=auth,
+                         fetcher=issue_fetcher)
