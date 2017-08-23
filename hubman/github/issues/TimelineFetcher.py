@@ -2,6 +2,8 @@
 import requests
 
 from hubman.github import GithubClient
+from hubman.github.storage import Database
+from hubman.github.storage import Timelines
 
 class TimelineFetcher(GithubClient):
     """Responsible for pulling JSON event timelines of an issue back from Github, and
@@ -33,22 +35,20 @@ class TimelineFetcher(GithubClient):
 
         return cls.drain(github_response, headers=headers, auth=auth)
 
-
 class TimelineCache(object):
     """Responsible for storing cached versions of the timeline data. Not a writethrough
     cache, unfortunately."""
 
     def __init__(self):
-        self.db = sqlite3.connect('timelines.db')
-
-
+        self.timelines = Timelines()
 
     def get_timeline(self, repo, issue_number, freshness):
         """Returns a generator dishing out elements in the json array until it's
         empty, or None if the cache misses."""
-        return None
+        with Database.connection() as connection:
+            return self.timelines.fetch(repo, issue_number, freshness, connection)
 
     def write_timeline(self, repo, issue_number, freshness, timeline):
         """Writes a timeline to the cache."""
-        pass
-
+        with Database.connection() as connection:
+            self.timelines.create(repo, issue_number, freshness, timeline, connection)

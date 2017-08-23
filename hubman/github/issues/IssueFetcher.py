@@ -20,7 +20,3 @@ class IssueFetcher(GithubClient):
         github_response = requests.get(search_url, headers=headers, params=params, auth=auth)
 
         return cls.drain(github_response)
-
-
-
-
