@@ -31,6 +31,11 @@ class Event(object):
     def __str__(self):
         return '%s: %s' % (self.timestamp, self.event_type)
 
+    def unapply(self, issue):
+        """Roll back the effect of this event to leave the Issue in the state it was
+        prior to its having occurred."""
+        raise NotImplementedError("Please Implement this method")
+
 
 #TODO: All of these chaps can be handled with the same class (for now at least).
 

@@ -43,4 +43,4 @@ class Issue(object):
                    state, timeline, labels, assignees, closed_at, json_issue=json_issue)
 
     def __str__(self):
-        return '%s, %s' % (self.repo, self.issue_number)
+        return '%s, %s:%s' % (self.repo, self.issue_number, self.title)
