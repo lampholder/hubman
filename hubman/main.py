@@ -5,7 +5,10 @@ from requests.auth import HTTPBasicAuth
 
 from datetime import datetime
 
-auth = HTTPBasicAuth('lampholder', '01780b2ff8bc328e8f275f4722a9643a073bc053')
+with open('token', 'r') as token_file:
+    token = token_file.read().strip()
+
+auth = HTTPBasicAuth('lampholder', token)
 
 gh = Github(auth)
 #for issue in gh.issues(['lampholder/test_data'], 'is:open'):
