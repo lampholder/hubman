@@ -32,8 +32,8 @@ class Query(object):
                                              NegativeAssigneeQuery)
 
     def get_assigned(self):
-        positive_assigned_regex = r'[^-]is:assigned\b'
-        negative_assigned_regex = r'-is:assigned\b'
+        positive_assigned_regex = r'\bis:assigned\b'
+        negative_assigned_regex = r'\bunassigned\b'
 
         query_components = []
 
@@ -41,12 +41,12 @@ class Query(object):
         # in the same query. It's not our job to police the query, and this way it
         # should fail sooner and more obviously.
         if re.search(positive_assigned_regex, self.query_string) is not None:
-            query_components += PositiveAssignedQuery()
+            query_components.append(PositiveAssignedQuery())
 
         if re.search(negative_assigned_regex, self.query_string) is not None:
-            query_components += NegativeAssignedQuery()
+            query_components.append(NegativeAssignedQuery())
 
-        return query_components
+        return set(query_components)
 
     def to_github_query_string(self):
         return (self.query_string
@@ -79,6 +79,12 @@ class PositiveAssignedQuery(object):
         """Matches if there are any assignees."""
         return len(issue.assignees) > 0
 
+    def __str__(self):
+        return 'is:assigned'
+
+    def __repr__(self):
+        return self.__str__()
+
 class NegativeAssignedQuery(object):
     """Query object representing an Issue's being assigned to _nobody_."""
 
@@ -92,6 +98,12 @@ class NegativeAssignedQuery(object):
     def matches(issue):
         """Matches if there are no assignees."""
         return len(issue.assignees) == 0
+
+    def __str__(self):
+        return 'unassigned'
+
+    def __repr__(self):
+        return self.__str__()
 
 class PositiveLabelQuery(object):
     """Query object representing an Issue's having a certain label present"""

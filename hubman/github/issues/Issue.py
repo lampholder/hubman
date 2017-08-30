@@ -2,6 +2,9 @@
 import dateutil.parser
 
 from hubman.github.issues import Event
+from hubman.github.issues import Entity
+from hubman.github.issues import Polarity
+
 
 class Issue(object):
 
@@ -21,6 +24,34 @@ class Issue(object):
         self.timeline = timeline
         self._json = json_issue
 
+    def rollback(self):
+        """Generate a copy of this issue with the most recent event unapplied."""
+        event = self.timeline[-1] # Event to roll back
+        remaining_events = self.timeline[:-1]
+
+        # These are the only entities we support rolling back so far.
+        labels = self.labels
+        assignees = self.assignees
+
+        entity_map = {Entity.ASSIGNEE: assignees,
+                      Entity.LABEL: labels}
+
+        ffs_map = {'feature': 'enhancement',
+                   'enhancement': 'feature'}
+
+        if event.entity is not Entity.IGNORED:
+            if event.polarity is Polarity.ADDED:
+                # FFS: Github stores label strings in the event timeline, not ids.
+                if event.payload not in entity_map[event.entity]:
+                    event.payload = ffs_map[event.payload]
+                entity_map[event.entity].remove(event.payload)
+            elif event.polarity is Polarity.REMOVED:
+                entity_map[event.entity].append(event.payload)
+
+        return Issue(self.repo, self.issue_number, self.title, self.body,
+                     self.created_at, self.updated_at, self.state, remaining_events,
+                     labels, assignees, self.closed_at, self._json)
+
     @classmethod
     def from_json_and_timeline_provider(cls, json_issue, timeline_provider):
         """Transform a json representation of an issue into a fully hydrated issue
@@ -36,7 +67,7 @@ class Issue(object):
         state = json_issue['state']
         labels = [label['name'] for label in json_issue['labels']]
         assignees = [assignee['login'] for assignee in json_issue['assignees']]
-        timeline = [Event.from_json(json_event) for json_event in
+        timeline = [Event(json_event) for json_event in
                     timeline_provider.get_timeline(repo, issue_number, updated_at)]
 
         return cls(repo, issue_number, title, body, created_at, updated_at,

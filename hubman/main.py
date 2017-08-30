@@ -3,7 +3,9 @@ from hubman.github import Query
 
 from requests.auth import HTTPBasicAuth
 
-auth = HTTPBasicAuth('lampholder', 'f6858c65176eba89b76c9d8a384461c540c5ca1b')
+from datetime import datetime
+
+auth = HTTPBasicAuth('lampholder', '01780b2ff8bc328e8f275f4722a9643a073bc053')
 
 gh = Github(auth)
 #for issue in gh.issues(['lampholder/test_data'], 'is:open'):
@@ -17,28 +19,38 @@ print 'FEATURE BACKLOG:'
 query = Query('is:open no:assignee label:feature -label:"ready to start"')
 feature_backlog = gh.issues(repos, query)
 for issue in feature_backlog:
-    print issue, query.matches(issue)
-    #for event in issue.timeline:
-    #    print '  EVENT: ', event
+    print issue,
+    while query.matches(issue):
+        timestamp = issue.timeline[-1].timestamp
+        issue = issue.rollback()
+    print datetime.now(timestamp.tzinfo) - timestamp
+
+print
+
+print 'READY TO START:'
+query = Query('is:open no:assignee label:feature label:"ready to start"')
+ready_to_start = gh.issues(repos, query)
+for issue in ready_to_start:
+    print issue,
+    while query.matches(issue):
+        timestamp = issue.timeline[-1].timestamp
+        issue = issue.rollback()
+    print datetime.now(timestamp.tzinfo) - timestamp
+print
+
+# FIXME: This won't work yet.
+print 'IN FLIGHT:'
+query = Query('is:open label:feature')
+in_flight = [issue for issue in gh.issues(repos, query) if len(issue.assignees) > 0]
+for issue in in_flight:
+    print issue,
+    while query.matches(issue):
+        timestamp = issue.timeline[-1].timestamp
+        issue = issue.rollback()
+    print datetime.now(timestamp.tzinfo) - timestamp
 print
 
 """
-print 'READY TO START:'
-ready_to_start = gh.issues(repos, 'is:open no:assignee label:feature label:"ready to start"')
-for issue in ready_to_start:
-    print issue
-    for event in issue.timeline:
-        print '  EVENT: ', event
-print
-
-print 'IN FLIGHT:'
-in_flight = [issue for issue in gh.issues(repos, 'is:open label:feature') if len(issue.assignees) > 0]
-for issue in in_flight:
-    print issue
-    for event in issue.timeline:
-        print '  EVENT: ', event
-print
-
 print 'IN REVIEW:'
 print 'Mentioned in a PR that is not yet merged.'
 print

@@ -16,4 +16,6 @@ class Github(object):
         for json_issue in self.issue_fetcher.fetch(repos,
                                                    query.to_github_query_string(),
                                                    self.auth):
-            yield Issue.from_json_and_timeline_provider(json_issue, self.timeline_fetcher)
+            issue = Issue.from_json_and_timeline_provider(json_issue, self.timeline_fetcher)
+            if query.matches(issue):
+                yield issue
