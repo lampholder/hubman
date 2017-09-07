@@ -1,9 +1,7 @@
+from datetime import datetime
+from requests.auth import HTTPBasicAuth
 from hubman.github import Github
 from hubman.github import Query
-
-from requests.auth import HTTPBasicAuth
-
-from datetime import datetime
 
 with open('token', 'r') as token_file:
     token = token_file.read().strip()
@@ -11,69 +9,34 @@ with open('token', 'r') as token_file:
 auth = HTTPBasicAuth('lampholder', token)
 
 gh = Github(auth)
-#for issue in gh.issues(['lampholder/test_data'], 'is:open'):
-#    print 'ISSUE: ', issue
-#    for event in issue.timeline:
-#        print '    EVENT: ', event
 
-repos = ['lampholder/test_data']
+#repos = ['lampholder/test_data']
+#order = ['FEATURE BACKLOG', 'READY TO START', 'IN FLIGHT']
+#board = {'FEATURE BACKLOG': Query('is:open no:assignee label:feature -label:"ready to start"'),
+#         'READY TO START': Query('is:open no:assignee label:feature label:"ready to start"'),
+#         'IN FLIGHT': Query('is:open label:feature is:assigned')}
 
-print 'FEATURE BACKLOG:'
-query = Query('is:open no:assignee label:feature -label:"ready to start"')
-feature_backlog = gh.issues(repos, query)
-for issue in feature_backlog:
-    print issue,
-    while query.matches(issue):
-        timestamp = issue.timeline[-1].timestamp
-        issue = issue.rollback()
-    print datetime.now(timestamp.tzinfo) - timestamp
-
-print
-
-print 'READY TO START:'
-query = Query('is:open no:assignee label:feature label:"ready to start"')
-ready_to_start = gh.issues(repos, query)
-for issue in ready_to_start:
-    print issue,
-    while query.matches(issue):
-        timestamp = issue.timeline[-1].timestamp
-        issue = issue.rollback()
-    print datetime.now(timestamp.tzinfo) - timestamp
-print
-
-# FIXME: This won't work yet.
-print 'IN FLIGHT:'
-query = Query('is:open label:feature')
-in_flight = [issue for issue in gh.issues(repos, query) if len(issue.assignees) > 0]
-for issue in in_flight:
-    print issue,
-    while query.matches(issue):
-        timestamp = issue.timeline[-1].timestamp
-        issue = issue.rollback()
-    print datetime.now(timestamp.tzinfo) - timestamp
-print
-
-"""
-print 'IN REVIEW:'
-print 'Mentioned in a PR that is not yet merged.'
-print
-
-print 'REVIEW COMPLETE:'
-
-"""
-"""
-Types of querier:
-    - added to every query string
-    - fork the original query string
-    - filter after the event (applied to all forks)
+repos = ['vector-im/riot-web']
+order = ['BACKLOG', 'READY TO START', 'IN PROGRESS', 'DONE']
+board = {
+            'BACKLOG': Query('is:issue is:open project:vector-im/riot-web/9 no:assignee -label:"ready to start"'),
+            'READY TO START': Query('is:issue is:open project:vector-im/riot-web/9 no:assignee label:"ready to start"'),
+            'IN PROGRESS': Query('is:issue is:open project:vector-im/riot-web/9 is:assigned'),
+            'DONE': Query('is:issue is:closed project:vector-im/riot-web/9')
+        }
 
 
-    (label:feature and label:p1) or label:bug
-     -----.-> label:feature label:p1
-          |
-          .-> label:bug
+def render(repos, board, order):
+    for status in order:
+        query = board[status]
+        print '%s:' % status
+        issues = gh.issues(repos, query)
+        for issue in issues:
+            print issue.number, issue.title,
+            while query.matches(issue) and len(issue.timeline) > 0:
+                timestamp = issue.timeline[-1].timestamp
+                issue = issue.rollback()
+            print datetime.now(timestamp.tzinfo) - timestamp
+        print
 
-    is:open x or y == is:open and (x or y)
-"""
-
-
+render(repos, board, order)
