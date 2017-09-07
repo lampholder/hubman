@@ -31,6 +31,16 @@ class Query(object):
         return self._get_tagged_query_params('assignee', PositiveAssigneeQuery,
                                              NegativeAssigneeQuery)
 
+    def get_states(self):
+        """This is a bit weird. The query shouldn't have is:open and is:closed, but it's not our
+        job to police that."""
+        states = []
+        if 'is:open' in self.query_string:
+            states.append('open')
+        if 'is:closed' in self.query_string:
+            states.append('closed')
+        return states
+
     def get_assigned(self):
         positive_assigned_regex = r'\bis:assigned\b'
         negative_assigned_regex = r'\bunassigned\b'
@@ -62,6 +72,9 @@ class Query(object):
                 return False
         for assigned in self.get_assigned():
             if not assigned.matches(issue):
+                return False
+        for state in self.get_states():
+            if issue.state != state:
                 return False
         return True
 

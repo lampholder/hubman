@@ -8,11 +8,11 @@ from hubman.github.issues import Polarity
 
 class Issue(object):
 
-    def __init__(self, repo, issue_number, title, body, created_at,
+    def __init__(self, repo, number, title, body, created_at,
                  updated_at, state, timeline, labels, assignees,
                  closed_at=None, json_issue=None):
         self.repo = repo
-        self.issue_number = issue_number
+        self.number = number
         self.title = title
         self.body = body
         self.created_at = created_at
@@ -36,20 +36,29 @@ class Issue(object):
         entity_map = {Entity.ASSIGNEE: assignees,
                       Entity.LABEL: labels}
 
+        state = self.state
+
         ffs_map = {'feature': 'enhancement',
                    'enhancement': 'feature'}
 
+        #XXX: Open/closed state has really messed with this code :(
         if event.entity is not Entity.IGNORED:
             if event.polarity is Polarity.ADDED:
-                # FFS: Github stores label strings in the event timeline, not ids.
-                if event.payload not in entity_map[event.entity]:
-                    event.payload = ffs_map[event.payload]
-                entity_map[event.entity].remove(event.payload)
+                if event.entity is Entity.OPEN:
+                    state = 'closed'
+                else:
+                    # FFS: Github stores label strings in the event timeline, not ids.
+                    if event.payload not in entity_map[event.entity]:
+                        event.payload = ffs_map[event.payload]
+                    entity_map[event.entity].remove(event.payload)
             elif event.polarity is Polarity.REMOVED:
-                entity_map[event.entity].append(event.payload)
+                if event.entity is Entity.OPEN:
+                    state = 'open'
+                else:
+                    entity_map[event.entity].append(event.payload)
 
-        return Issue(self.repo, self.issue_number, self.title, self.body,
-                     self.created_at, self.updated_at, self.state, remaining_events,
+        return Issue(self.repo, self.number, self.title, self.body,
+                     self.created_at, self.updated_at, state, remaining_events,
                      labels, assignees, self.closed_at, self._json)
 
     @classmethod
@@ -57,7 +66,7 @@ class Issue(object):
         """Transform a json representation of an issue into a fully hydrated issue
         object, with the help of a timeline provider to fetch the events timeline."""
         repo = json_issue['repository_url'][29:]
-        issue_number = json_issue['number']
+        number = json_issue['number']
         title = json_issue['title']
         body = json_issue['body']
         created_at = dateutil.parser.parse(json_issue['created_at'])
@@ -68,10 +77,10 @@ class Issue(object):
         labels = [label['name'] for label in json_issue['labels']]
         assignees = [assignee['login'] for assignee in json_issue['assignees']]
         timeline = [Event(json_event) for json_event in
-                    timeline_provider.get_timeline(repo, issue_number, updated_at)]
+                    timeline_provider.get_timeline(repo, number, updated_at)]
 
-        return cls(repo, issue_number, title, body, created_at, updated_at,
+        return cls(repo, number, title, body, created_at, updated_at,
                    state, timeline, labels, assignees, closed_at, json_issue=json_issue)
 
     def __str__(self):
-        return '%s, %s:%s' % (self.repo, self.issue_number, self.title)
+        return '%s, %s:%s' % (self.repo, self.number, self.title)

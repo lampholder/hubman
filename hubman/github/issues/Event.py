@@ -12,6 +12,7 @@ class Entity(Enum):
     """Represents the entity upon which an event is acting."""
     LABEL = 'label'
     ASSIGNEE = 'assignee'
+    OPEN = 'open'
     IGNORED = 'ignored'
 
 class Event(object):
@@ -36,6 +37,8 @@ class Event(object):
             return json_event['label']['name']
         elif entity == Entity.ASSIGNEE:
             return json_event['assignee']['login']
+        elif entity == Entity.OPEN:
+            return 'open' if json_event['event'] == 'reopened' else 'closed'
         else:
             return None
 
@@ -46,7 +49,9 @@ class Event(object):
         event_map = {'labeled': (Entity.LABEL, Polarity.ADDED),
                      'unlabeled': (Entity.LABEL, Polarity.REMOVED),
                      'assigned': (Entity.ASSIGNEE, Polarity.ADDED),
-                     'unassigned': (Entity.ASSIGNEE, Polarity.REMOVED)}
+                     'unassigned': (Entity.ASSIGNEE, Polarity.REMOVED),
+                     'closed': (Entity.OPEN, Polarity.REMOVED),
+                     'reopened': (Entity.OPEN, Polarity.ADDED)}
 
         if event_type in event_map:
             return event_map[event_type]
