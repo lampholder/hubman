@@ -1,3 +1,5 @@
+import sys
+
 from datetime import datetime
 from requests.auth import HTTPBasicAuth
 from hubman.github import Github
@@ -24,19 +26,29 @@ board = {
             'IN PROGRESS': Query('is:issue is:open project:vector-im/riot-web/9 is:assigned'),
             'DONE': Query('is:issue is:closed project:vector-im/riot-web/9')
         }
+def chunkstring(string, length):
+        return (string[0+i:length+i] for i in range(0, len(string), length))
 
 
-def render(repos, board, order):
-    for status in order:
-        query = board[status]
-        print '%s:' % status
-        issues = gh.issues(repos, query)
-        for issue in issues:
-            print issue.number, issue.title,
-            while query.matches(issue) and len(issue.timeline) > 0:
-                timestamp = issue.timeline[-1].timestamp
-                issue = issue.rollback()
-            print datetime.now(timestamp.tzinfo) - timestamp
-        print
 
-render(repos, board, order)
+
+def render_column(heading, repos, query):
+    print '%s:' % heading
+    issues = gh.issues(repos, query)
+    for issue in issues:
+        print '.---------------------------------.'
+        print '| #{: <30} |'.format(issue.number)
+        for chunk in chunkstring(issue.title, 31):
+            print '| {:31.31} |'.format(chunk)
+        print '|                                 |'
+        while query.matches(issue) and len(issue.timeline) > 0:
+            timestamp = issue.timeline[-1].timestamp
+            issue = issue.rollback()
+        time_in_state = datetime.now(timestamp.tzinfo) - timestamp
+        print '| {:>31.31} |'.format(time_in_state)
+        print '._________________________________.'
+    print
+
+column = sys.argv[1]
+
+render_column(column, repos, board[column])
