@@ -3,6 +3,18 @@ import re
 
 import requests
 
+def _extractNextLinkFromHeader(link_header):
+    if link_header is None:
+        return None
+
+    next_links = [link for link in link_header.split(',')
+                  if link[-10:] == 'rel="next"']
+
+    if len(next_links) == 1:
+        return re.split('<|>', next_links[0])[1]
+
+    return None
+
 class GithubClient(object):
     """Base Github accessor class."""
 
@@ -28,9 +40,8 @@ class GithubClient(object):
             for json_entity in fetcher(response_json):
                 yield json_entity
 
-            next_url = (re.split('<|>', [link for link in github_response.headers['Link'].split(',')
-                                         if link[-10:] == 'rel="next"'][0])[1]
-                        if 'Link' in github_response.headers else None)
+            next_url = _extractNextLinkFromHeader(github_response.headers.get('Link',
+                                                                              None))
 
             if next_url is None:
                 break

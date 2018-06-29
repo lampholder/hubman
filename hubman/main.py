@@ -18,12 +18,14 @@ gh = Github(auth)
 #         'READY TO START': Query('is:open no:assignee label:feature label:"ready to start"'),
 #         'IN FLIGHT': Query('is:open label:feature is:assigned')}
 
-repos = ['vector-im/riot-web']
-order = ['BACKLOG', 'READY TO START', 'IN PROGRESS', 'DONE']
+repos = ['vector-im/riot-web', 'matrix-org/matrix-js-sdk',
+         'matrix-org/matrix-react-sdk']
+order = ['BACKLOG', 'IN PROGRESS', 'IN REVIEW', 'DONE']
 board = {
-            'BACKLOG': Query('is:issue is:open project:vector-im/riot-web/9 no:assignee -label:"ready to start"'),
-            'READY TO START': Query('is:issue is:open project:vector-im/riot-web/9 no:assignee label:"ready to start"'),
-            'IN PROGRESS': Query('is:issue is:open project:vector-im/riot-web/9 is:assigned'),
+            'BACKLOG': Query('is:issue is:open milestone:RW010 no:assignee'),
+            'IN PROGRESS': Query('is:issue is:open is:assigned'),
+            'AWAITING REVIEW': Query('is:pr is:open -is:assigned'),
+            'IN REVIEW': Query('is:pr is:open is:assigned'),
             'DONE': Query('is:issue is:closed project:vector-im/riot-web/9')
         }
 def chunkstring(string, length):
@@ -37,6 +39,7 @@ def render_column(heading, repos, query):
     issues = gh.issues(repos, query)
     for issue in issues:
         print '.---------------------------------.'
+        print '| {: <31} |'.format(issue.repo)
         print '| #{: <30} |'.format(issue.number)
         for chunk in chunkstring(issue.title, 31):
             print '| {:31.31} |'.format(chunk)

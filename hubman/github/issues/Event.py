@@ -20,7 +20,10 @@ class Event(object):
 
     def __init__(self, json_event):
         self.event_type = json_event['event']
-        self.timestamp = dateutil.parser.parse(json_event['created_at'])
+        if 'created_at' in json_event:
+            self.timestamp = dateutil.parser.parse(json_event['created_at'])
+        else:
+            self.timestamp = None
 
         (self.entity, self.polarity) = self.get_entity_and_polarity(self.event_type)
 
